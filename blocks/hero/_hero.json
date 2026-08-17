@@ -35,11 +35,45 @@
           "value": ""
         },
         {
+          "component": "text",
+          "valueType": "string",
+          "name": "heading",
+          "label": "Heading",
+          "value": ""
+        },
+        {
           "component": "richtext",
           "name": "text",
           "value": "",
-          "label": "Text",
+          "label": "Description",
           "valueType": "string"
+        },
+        {
+          "component": "aem-content",
+          "name": "link",
+          "label": "CTA Link"
+        },
+        {
+          "component": "text",
+          "valueType": "string",
+          "name": "linkText",
+          "label": "CTA Text",
+          "value": ""
+        },
+        {
+          "component": "select",
+          "name": "linkType",
+          "label": "CTA Type",
+          "options": [
+            {
+              "name": "Primary",
+              "value": ""
+            },
+            {
+              "name": "Secondary",
+              "value": "secondary"
+            }
+          ]
         }
       ]
     }
