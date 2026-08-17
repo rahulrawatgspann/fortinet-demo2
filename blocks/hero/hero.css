@@ -5,15 +5,33 @@
 
 .hero {
   position: relative;
+  display: flex;
+  align-items: center;
   padding: 40px 24px;
   min-height: 300px;
 }
 
-.hero h1 {
+.hero .hero-body {
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  width: 100%;
   color: var(--background-color);
+}
+
+.hero .hero-body h1,
+.hero .hero-body h2,
+.hero .hero-body h3 {
+  margin-top: 0;
+  color: var(--background-color);
+}
+
+.hero .hero-body p {
+  color: var(--background-color);
+}
+
+.hero .hero-body .button-container {
+  margin-bottom: 0;
 }
 
 .hero picture {

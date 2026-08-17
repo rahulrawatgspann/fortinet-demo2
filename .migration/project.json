@@ -1,0 +1,12 @@
+{
+  "sites": {
+    "fortinet-demo2": {
+      "previewOrg": "rahulrawatgspann",
+      "previewSite": "fortinet-demo2",
+      "aemSitePath": "/content/fortinet-demo",
+      "aemAssetsFolderPath": "/content/dam/fortinet-demo",
+      "aemSiteName": "fortinet-demo",
+      "aemSiteTitle": "Fortinet Demo"
+    }
+  }
+}
