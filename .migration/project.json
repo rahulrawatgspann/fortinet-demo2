@@ -6,7 +6,8 @@
       "aemSitePath": "/content/fortinet-demo",
       "aemAssetsFolderPath": "/content/dam/fortinet-demo",
       "aemSiteName": "fortinet-demo",
-      "aemSiteTitle": "Fortinet Demo"
+      "aemSiteTitle": "Fortinet Demo",
+      "baseUrl": "https://www.fortinet.com"
     }
   }
 }
