@@ -74,6 +74,9 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
   const button = nav.querySelector('.nav-hamburger button');
   document.body.style.overflowY = (expanded || isDesktop.matches) ? '' : 'hidden';
   nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  // reflect the open state on the wrapper so the utility bar can join the mobile drawer
+  const navWrapper = nav.closest('.nav-wrapper');
+  if (navWrapper) navWrapper.classList.toggle('nav-open', !expanded && !isDesktop.matches);
   toggleAllNavSections(navSections, expanded || isDesktop.matches ? 'false' : 'true');
   button.setAttribute('aria-label', expanded ? 'Open navigation' : 'Close navigation');
   // enable nav dropdown keyboard accessibility
@@ -170,6 +173,29 @@ async function buildBreadcrumbs() {
 }
 
 /**
+ * Resolve the authored nav sections by their "Role" (section metadata), falling back
+ * to document order (brand, sections, tools) so a legacy single-level /nav still works.
+ * @param {Element} nav The nav element containing the authored sections
+ * @returns {Object} map of role -> section element
+ */
+function resolveNavSections(nav) {
+  const sections = [...nav.querySelectorAll(':scope > .section')];
+  const roles = {};
+  sections.forEach((section) => {
+    const { role } = section.dataset;
+    if (role) roles[role] = section;
+  });
+  // legacy fallback: no roles authored -> map by order
+  if (Object.keys(roles).length === 0) {
+    const [brand, main, tools] = sections;
+    if (brand) roles.brand = brand;
+    if (main) roles.sections = main;
+    if (tools) roles.utility = tools;
+  }
+  return roles;
+}
+
+/**
  * loads and decorates the header, mainly the nav
  * @param {Element} block The header block element
  */
@@ -185,21 +211,59 @@ export default async function decorate(block) {
   nav.id = 'nav';
   while (fragment.firstElementChild) nav.append(fragment.firstElementChild);
 
-  const classes = ['brand', 'sections', 'tools'];
-  classes.forEach((c, i) => {
-    const section = nav.children[i];
-    if (section) section.classList.add(`nav-${c}`);
-  });
+  const roles = resolveNavSections(nav);
 
-  const navBrand = nav.querySelector('.nav-brand');
-  const brandLink = navBrand.querySelector('.button');
-  if (brandLink) {
-    brandLink.className = '';
-    brandLink.closest('.button-container').className = '';
+  // --- top utility bar ---------------------------------------------------
+  const navUtility = document.createElement('div');
+  navUtility.className = 'nav-utility';
+  const utilitySection = roles.utility;
+  if (utilitySection) {
+    const inner = document.createElement('div');
+    inner.className = 'nav-utility-inner';
+    // authored content arrives wrapped in a .default-content-wrapper; flatten it
+    // so the link list and icon controls become direct children of the flex row
+    const utilityWrapper = utilitySection.querySelector(':scope > .default-content-wrapper');
+    const utilityContent = utilityWrapper || utilitySection;
+    while (utilityContent.firstElementChild) inner.append(utilityContent.firstElementChild);
+    navUtility.append(inner);
+    utilitySection.remove();
+
+    // strip boilerplate button decoration so utility links render as plain links
+    inner.querySelectorAll('.button-container').forEach((buttonContainer) => {
+      buttonContainer.classList.remove('button-container');
+      buttonContainer.querySelector('.button')?.classList.remove('button');
+    });
+
+    // tag the search + language controls so they can be styled/handled distinctly
+    const searchLink = inner.querySelector('a .icon-search, a[href*="search"]');
+    if (searchLink) {
+      const anchor = searchLink.closest('a');
+      anchor.classList.add('nav-utility-search');
+      if (anchor.textContent.trim() === '') anchor.setAttribute('aria-label', 'Search');
+    }
+    const langLink = inner.querySelector('a .icon-globe');
+    if (langLink) {
+      const anchor = langLink.closest('a');
+      anchor.classList.add('nav-utility-language');
+      if (anchor.textContent.trim() === '') anchor.setAttribute('aria-label', 'Language');
+    }
   }
 
-  const navSections = nav.querySelector('.nav-sections');
+  // --- main bar: brand ---------------------------------------------------
+  const navBrand = roles.brand;
+  if (navBrand) {
+    navBrand.classList.add('nav-brand');
+    const brandLink = navBrand.querySelector('.button');
+    if (brandLink) {
+      brandLink.className = '';
+      brandLink.closest('.button-container').className = '';
+    }
+  }
+
+  // --- main bar: sections (with dropdowns) -------------------------------
+  const navSections = roles.sections;
   if (navSections) {
+    navSections.classList.add('nav-sections');
     navSections.querySelectorAll(':scope .default-content-wrapper > ul > li').forEach((navSection) => {
       if (navSection.querySelector('ul')) navSection.classList.add('nav-drop');
       navSection.addEventListener('click', () => {
@@ -212,17 +276,24 @@ export default async function decorate(block) {
     });
     navSections.querySelectorAll('.button-container').forEach((buttonContainer) => {
       buttonContainer.classList.remove('button-container');
-      buttonContainer.querySelector('.button').classList.remove('button');
+      buttonContainer.querySelector('.button')?.classList.remove('button');
     });
   }
 
-  const navTools = nav.querySelector('.nav-tools');
-  if (navTools) {
-    const search = navTools.querySelector('a[href*="search"]');
-    if (search && search.textContent === '') {
-      search.setAttribute('aria-label', 'Search');
-    }
+  // --- main bar: threat intelligence CTA (right) -------------------------
+  const navThreat = roles.threat;
+  if (navThreat) {
+    navThreat.classList.add('nav-tools', 'nav-threat');
+    navThreat.querySelectorAll('.button-container').forEach((buttonContainer) => {
+      buttonContainer.classList.remove('button-container');
+      buttonContainer.querySelector('.button')?.classList.remove('button');
+    });
   }
+
+  // reorder main-bar sections: brand, sections, threat
+  [navBrand, navSections, navThreat].forEach((section) => {
+    if (section) nav.append(section);
+  });
 
   // hamburger for mobile
   const hamburger = document.createElement('div');
@@ -239,6 +310,7 @@ export default async function decorate(block) {
 
   const navWrapper = document.createElement('div');
   navWrapper.className = 'nav-wrapper';
+  navWrapper.append(navUtility);
   navWrapper.append(nav);
   block.append(navWrapper);
 
